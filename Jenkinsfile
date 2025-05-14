@@ -6,7 +6,7 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-        echo '✅ GitHub push triggered this pipeline!'
+        echo '✅ GitHub push triggered this pipeline finaly )))))))!'
       }
     }
   }
