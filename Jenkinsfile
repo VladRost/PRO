@@ -70,9 +70,6 @@ spec:
         container('docker') {
           sh """
 	  docker pull s28288/projuiceshop:custom-v1
-//docker version
-// docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-// docker push ${IMAGE_NAME}:${IMAGE_TAG}
           """
         }
       }
