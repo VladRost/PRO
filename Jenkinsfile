@@ -1,24 +1,18 @@
 pipeline {
   agent {
     kubernetes {
-      label 'jenkins-dind-agent'
-      defaultContainer 'tools'
+      label 'jenkins-dind'
+      defaultContainer 'main'
       yaml """
 apiVersion: v1
 kind: Pod
-metadata:
-  labels:
-    some-label: jenkins-dind
 spec:
   containers:
-    - name: tools
-      image: alpine/helm:3.14.0
+    - name: main
+      image: lachlanevenson/k8s-helm:latest
       command:
         - cat
       tty: true
-      volumeMounts:
-        - mountPath: /var/run/docker.sock
-          name: docker-sock
       env:
         - name: DOCKER_HOST
           value: tcp://localhost:2375
@@ -30,9 +24,6 @@ spec:
         - dockerd
         - --host=tcp://0.0.0.0:2375
         - --host=unix:///var/run/docker.sock
-  volumes:
-    - name: docker-sock
-      emptyDir: {}
 """
     }
   }
@@ -45,9 +36,20 @@ spec:
   }
 
   stages {
+    stage('Install Docker CLI') {
+      steps {
+        container('main') {
+          sh """
+          apk add --no-cache docker-cli
+          docker version
+          """
+        }
+      }
+    }
+
     stage('Docker Login') {
       steps {
-        container('tools') {
+        container('main') {
           withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
             sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
           }
@@ -55,11 +57,10 @@ spec:
       }
     }
 
-    stage('Build & Push Image') {
+    stage('Build & Push Docker Image') {
       steps {
-        container('tools') {
+        container('main') {
           sh """
-          docker version
           docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
           docker push ${IMAGE_NAME}:${IMAGE_TAG}
           """
@@ -69,9 +70,8 @@ spec:
 
     stage('Deploy with Helm') {
       steps {
-        container('tools') {
+        container('main') {
           sh """
-          helm version
           helm upgrade --install juice-shop ${CHART_PATH} \\
             --namespace ${NAMESPACE} \\
             --create-namespace \\
