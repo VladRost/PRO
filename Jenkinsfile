@@ -10,6 +10,7 @@ metadata:
   labels:
     role: juice-shop-deployer
 spec:
+  serviceAccountName: jenkins
   containers:
     - name: helm
       image: lachlanevenson/k8s-helm:latest
