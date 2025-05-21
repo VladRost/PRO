@@ -2,20 +2,23 @@ pipeline {
   agent {
     kubernetes {
       label 'jenkins-dind-agent'
-      defaultContainer 'docker'
+      defaultContainer 'tools'
       yaml """
 apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    some-label: dind
+    some-label: jenkins-dind
 spec:
   containers:
-    - name: docker
-      image: docker:24.0.2-cli
+    - name: tools
+      image: alpine/helm:3.14.0
       command:
         - cat
       tty: true
+      volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-sock
       env:
         - name: DOCKER_HOST
           value: tcp://localhost:2375
@@ -23,13 +26,13 @@ spec:
       image: docker:dind
       securityContext:
         privileged: true
-      ports:
-        - containerPort: 2375
-          name: dockerd
       args:
         - dockerd
         - --host=tcp://0.0.0.0:2375
         - --host=unix:///var/run/docker.sock
+  volumes:
+    - name: docker-sock
+      emptyDir: {}
 """
     }
   }
@@ -44,7 +47,7 @@ spec:
   stages {
     stage('Docker Login') {
       steps {
-        container('docker') {
+        container('tools') {
           withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
             sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
           }
@@ -54,7 +57,7 @@ spec:
 
     stage('Build & Push Image') {
       steps {
-        container('docker') {
+        container('tools') {
           sh """
           docker version
           docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
@@ -66,13 +69,16 @@ spec:
 
     stage('Deploy with Helm') {
       steps {
-        sh """
-        helm upgrade --install juice-shop ${CHART_PATH} \\
-          --namespace ${NAMESPACE} \\
-          --create-namespace \\
-          --set image.repository=${IMAGE_NAME} \\
-          --set image.tag=${IMAGE_TAG}
-        """
+        container('tools') {
+          sh """
+          helm version
+          helm upgrade --install juice-shop ${CHART_PATH} \\
+            --namespace ${NAMESPACE} \\
+            --create-namespace \\
+            --set image.repository=${IMAGE_NAME} \\
+            --set image.tag=${IMAGE_TAG}
+          """
+        }
       }
     }
   }
