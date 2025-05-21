@@ -1,5 +1,38 @@
 pipeline {
-  agent any
+  agent {
+    kubernetes {
+      label 'jenkins-dind-agent'
+      defaultContainer 'docker'
+      yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    some-label: dind
+spec:
+  containers:
+    - name: docker
+      image: docker:24.0.2-cli
+      command:
+        - cat
+      tty: true
+      env:
+        - name: DOCKER_HOST
+          value: tcp://localhost:2375
+    - name: dind
+      image: docker:dind
+      securityContext:
+        privileged: true
+      ports:
+        - containerPort: 2375
+          name: dockerd
+      args:
+        - dockerd
+        - --host=tcp://0.0.0.0:2375
+        - --host=unix:///var/run/docker.sock
+"""
+    }
+  }
 
   environment {
     IMAGE_NAME = "s28288/projuiceshop"
@@ -9,26 +42,25 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
-    }
-
     stage('Docker Login') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+        container('docker') {
+          withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+          }
         }
       }
     }
 
-    stage('Build Docker Image') {
+    stage('Build & Push Image') {
       steps {
-        sh """
-        docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-        docker push ${IMAGE_NAME}:${IMAGE_TAG}
-        """
+        container('docker') {
+          sh """
+          docker version
+          docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+          docker push ${IMAGE_NAME}:${IMAGE_TAG}
+          """
+        }
       }
     }
 
@@ -42,12 +74,6 @@ pipeline {
           --set image.tag=${IMAGE_TAG}
         """
       }
-    }
-  }
-
-  post {
-    always {
-      echo "✅ Pipeline complete: image built, pushed, and deployed!"
     }
   }
 }
