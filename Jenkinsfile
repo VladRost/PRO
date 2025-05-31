@@ -127,7 +127,7 @@ spec:
           sh """
 	  cd /zap/wrk
           mkdir -p ${ZAP_DIR}
-          zap-full-scan.py -t ${TARGET_URL} -r ${ZAP_DIR}/${ZAP_REPORT} || true
+          zap-full-scan.py -t ${TARGET_URL} -r ${ZAP_DIR}/${ZAP_REPORT} -m 100 || true
           """
         }
       }
