@@ -22,6 +22,11 @@ spec:
       image: returntocorp/semgrep
       command: ['cat']
       tty: true
+
+    - name: trivy
+      image: aquasec/trivy:latest
+      command: ['cat']
+      tty: true
 """
     }
   }
@@ -32,7 +37,9 @@ spec:
     NAMESPACE = "juice"
     CHART_PATH = "./juice-shop"
     REPORT_DIR = "semgrep-report"
-    REPORT_FILE = "semgrep.json"  // Replace with your chart path if different
+    REPORT_FILE = "semgrep.json"
+    TRIVY_DIR = "trivy-report"
+    TRIVY_FILE = "trivy.json"  // Replace with your chart path if different
   }
 
   stages {
@@ -59,6 +66,24 @@ spec:
       steps {
         container('semgrep') {
           archiveArtifacts artifacts: "${REPORT_DIR}/${REPORT_FILE}", allowEmptyArchive: true
+        }
+      }
+    }
+    stage('Image Scan (Trivy)') {
+      steps {
+        container('trivy') {
+          sh """
+          mkdir -p ${TRIVY_DIR}
+          trivy image --severity CRITICAL,HIGH --format json -o ${TRIVY_DIR}/${TRIVY_FILE} ${FULL_IMAGE}
+          """
+        }
+      }
+    }
+
+    stage('Archive Trivy Report') {
+      steps {
+        container('trivy') {
+          archiveArtifacts artifacts: "${TRIVY_DIR}/${TRIVY_FILE}", allowEmptyArchive: true
         }
       }
     }
