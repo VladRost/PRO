@@ -34,6 +34,7 @@ spec:
   environment {
     IMAGE_NAME = "bkimminich/juice-shop"
     IMAGE_TAG = "latest"
+    FULL_IMAGE = "bkimminich/juice-shop"
     NAMESPACE = "juice"
     CHART_PATH = "./juice-shop"
     REPORT_DIR = "semgrep-report"
