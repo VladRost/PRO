@@ -11,6 +11,9 @@ metadata:
     role: juice-shop-deployer
 spec:
   serviceAccountName: jenkins
+  volumes:
+    - name: zap-workdir
+      emptyDir: {}
   containers:
     - name: helm
       image: lachlanevenson/k8s-helm:latest
@@ -32,6 +35,9 @@ spec:
       image: zaproxy/zap-stable
       command: ['cat']
       tty: true
+      volumeMounts:
+        - name: zap-workdir
+	  mountPath: /zap/wrk
     
     - name: reportgen
       image: python:3.10
