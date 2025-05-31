@@ -27,6 +27,11 @@ spec:
       image: aquasec/trivy:latest
       command: ['cat']
       tty: true
+
+    - name: zap
+      image: owasp/zap2docker-stable
+      command: ['cat']
+      tty: true
 """
     }
   }
@@ -40,7 +45,10 @@ spec:
     REPORT_DIR = "semgrep-report"
     REPORT_FILE = "semgrep.json"
     TRIVY_DIR = "trivy-report"
-    TRIVY_FILE = "trivy.json"  // Replace with your chart path if different
+    TRIVY_FILE = "trivy.json"
+    ZAP_DIR = "zap-report"
+    ZAP_REPORT = "zap.html"
+    TARGET_URL = "localhost:3000"  // Replace with your chart path if different
   }
 
   stages {
@@ -99,6 +107,16 @@ spec:
             --create-namespace \\
             --set image.repository=${IMAGE_NAME} \\
             --set image.tag=${IMAGE_TAG}
+          """
+        }
+      }
+    }
+    stage('DAST Scan (OWASP ZAP)') {
+      steps {
+        container('zap') {
+          sh """
+          mkdir -p ${ZAP_DIR}
+          zap-full-scan.py -t ${TARGET_URL} -r ${ZAP_DIR}/${ZAP_REPORT} || true
           """
         }
       }
