@@ -129,15 +129,12 @@ spec:
     stage('Generate Combined Report') {
       steps {
         container('reportgen') {
-          sh """
-          pip install --quiet --no-cache-dir -U pip
-          python3 -c "$(cat <<'EOF'
-$(cat generate_summary.py)
-EOF
-          )"
-          mkdir -p final-report
-          mv summary.html final-report/
-          """
+	  sh '''
+      pip install --quiet --no-cache-dir -U pip
+      python3 generate_summary.py
+      mkdir -p final-report
+      mv summary.html final-report/
+      '''
         }
       }
     }
