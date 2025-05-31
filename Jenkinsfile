@@ -29,7 +29,7 @@ spec:
       tty: true
 
     - name: zap
-      image: owasp/zap2docker-stable
+      image: zaproxy/zap-stable
       command: ['cat']
       tty: true
 """
