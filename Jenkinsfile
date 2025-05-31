@@ -17,8 +17,7 @@ spec:
   containers:
     - name: helm
       image: lachlanevenson/k8s-helm:latest
-      command:
-        - cat
+      command: ['cat']
       tty: true
 
     - name: semgrep
@@ -37,7 +36,7 @@ spec:
       tty: true
       volumeMounts:
         - name: zap-workdir
-	  mountPath: /zap/wrk
+          mountPath: /zap/wrk
     
     - name: reportgen
       image: python:3.10
