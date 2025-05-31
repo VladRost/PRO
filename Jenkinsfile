@@ -58,7 +58,7 @@ spec:
     TRIVY_FILE = "trivy.json"
     ZAP_DIR = "zap-report"
     ZAP_REPORT = "zap.html"
-    TARGET_URL = "http://127.0.0.1:3000/#/"
+    TARGET_URL = "https://8590-2a02-a31a-c3b2-5500-40c0-b3fc-9c7-1fee.ngrok-free.app/#/"
   }
 
   stages {
