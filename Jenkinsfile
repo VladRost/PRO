@@ -17,6 +17,11 @@ spec:
       command:
         - cat
       tty: true
+
+    - name: semgrep
+      image: returntocorp/semgrep
+      command: ['cat']
+      tty: true
 """
     }
   }
@@ -25,10 +30,39 @@ spec:
     IMAGE_NAME = "bkimminich/juice-shop"
     IMAGE_TAG = "latest"
     NAMESPACE = "juice"
-    CHART_PATH = "./juice-shop"  // Replace with your chart path if different
+    CHART_PATH = "./juice-shop"
+    REPORT_DIR = "semgrep-report"
+    REPORT_FILE = "semgrep.json"  // Replace with your chart path if different
   }
 
   stages {
+   stage('Checkout') {
+      steps {
+        container('helm') {
+          checkout scm
+        }
+      }
+    }
+
+   stage('SAST Scan (Semgrep)') {
+      steps {
+        container('semgrep') {
+          sh """
+          mkdir -p ${REPORT_DIR}
+          semgrep scan --config auto . --json > ${REPORT_DIR}/${REPORT_FILE}
+          """
+        }
+      }
+    }
+
+    stage('Archive Semgrep Report') {
+      steps {
+        container('semgrep') {
+          archiveArtifacts artifacts: "${REPORT_DIR}/${REPORT_FILE}", allowEmptyArchive: true
+        }
+      }
+    }
+
     stage('Deploy Juice Shop') {
       steps {
         container('helm') {
