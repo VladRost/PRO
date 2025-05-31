@@ -135,7 +135,7 @@ spec:
     stage('Collect ZAP Report') {
       steps {
         container('zap') {
-         archiveArtifacts artifacts: "/zap/wrk/zap-report/zap.html", allowEmptyArchive: true
+         archiveArtifacts artifacts: "zap-report/zap.html", allowEmptyArchive: true
         }
       }
     }
