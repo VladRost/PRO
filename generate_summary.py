@@ -13,7 +13,7 @@ def semgrep_summary(data):
 
 def trivy_summary(data):
     count = sum(len(r.get("Vulnerabilities", [])) for r in data if "Vulnerabilities" in r)
-    return f"<li>🐳 Trivy: <strong>{count}</strong> vulnerabilities</li>"
+    return f"<li>🐳 Trivy: <strong>{len(data.get('results', []))}</strong> vulnerabilities</li>"
 
 def generate_html(semgrep_data, trivy_data):
     return f"""

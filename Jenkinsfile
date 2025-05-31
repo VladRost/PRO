@@ -132,6 +132,14 @@ spec:
         }
       }
     }
+    stage('Collect ZAP Report') {
+      steps {
+        container('zap') {
+         archiveArtifacts artifacts: "/zap/wrk/zap-report/zap.html", allowEmptyArchive: true
+        }
+      }
+    }
+
     stage('Generate Combined Report') {
       steps {
         container('reportgen') {
