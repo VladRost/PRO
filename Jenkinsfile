@@ -58,7 +58,7 @@ spec:
     TRIVY_FILE = "trivy.json"
     ZAP_DIR = "zap-report"
     ZAP_REPORT = "zap.html"
-    TARGET_URL = "http://localhost:3000"  // Replace with your chart path if different
+    TARGET_URL = "http://127.0.0.1:3000/#/"
   }
 
   stages {
