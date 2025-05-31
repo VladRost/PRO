@@ -32,6 +32,11 @@ spec:
       image: zaproxy/zap-stable
       command: ['cat']
       tty: true
+    
+    - name: reportgen
+      image: python:3.10
+      command: ['cat']
+      tty: true
 """
     }
   }
@@ -48,7 +53,7 @@ spec:
     TRIVY_FILE = "trivy.json"
     ZAP_DIR = "zap-report"
     ZAP_REPORT = "zap.html"
-    TARGET_URL = "localhost:3000"  // Replace with your chart path if different
+    TARGET_URL = "http://localhost:3000"  // Replace with your chart path if different
   }
 
   stages {
@@ -118,6 +123,29 @@ spec:
           mkdir -p ${ZAP_DIR}
           zap-full-scan.py -t ${TARGET_URL} -r ${ZAP_DIR}/${ZAP_REPORT} || true
           """
+        }
+      }
+    }
+    stage('Generate Combined Report') {
+      steps {
+        container('reportgen') {
+          sh """
+          pip install --quiet --no-cache-dir -U pip
+          python3 -c "$(cat <<'EOF'
+$(cat generate_summary.py)
+EOF
+          )"
+          mkdir -p final-report
+          mv summary.html final-report/
+          """
+        }
+      }
+    }
+
+    stage('Archive Final Report') {
+      steps {
+        container('reportgen') {
+          archiveArtifacts artifacts: "final-report/summary.html", allowEmptyArchive: true
         }
       }
     }
